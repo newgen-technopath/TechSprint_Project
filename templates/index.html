@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dost Financial | Strategy Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --card-glass: rgba(30, 30, 30, 0.6);
+            --card-hover: rgba(57, 255, 20, 0.05);
+            --neon-green: #39FF14;
+            --neon-red: #ff3939;
+            --neon-blue: #39e5ff;
+            --neon-glow: 0 0 10px rgba(57, 255, 20, 0.4);
+            --text-white: #ffffff;
+            --text-grey: #a0a0a0;
+            --border-light: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 1. LOCK THE VIEWPORT */
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; background-color: var(--bg-dark); color: var(--text-white); }
+        
+        /* 2. STEALTH SCROLLBAR */
+        .left-pane::-webkit-scrollbar { width: 6px; }
+        .left-pane::-webkit-scrollbar-track { background: transparent; }
+        .left-pane::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        .left-pane::-webkit-scrollbar-thumb:hover { background: var(--neon-green); cursor: pointer; }
+
+        /* --- UTILITIES --- */
+        .text-neon { color: var(--neon-green); text-shadow: var(--neon-glow); }
+        .text-blue { color: var(--neon-blue); text-shadow: 0 0 10px rgba(57, 229, 255, 0.4); }
+        .btn-neon { background: transparent; border: 2px solid var(--neon-green); color: var(--neon-green); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; box-shadow: var(--neon-glow); transition: all 0.3s; }
+        .btn-neon:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 20px var(--neon-green); }
+
+        /* Pulse Animation for Start Button */
+        @keyframes pulse-neon {
+            0% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(57, 255, 20, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(57, 255, 20, 0); }
+        }
+        #start-btn {
+            animation: pulse-neon 2s infinite;
+        }
+
+        /* --- PAGE TRANSITION --- */
+        .page-container { display: flex; width: 200vw; height: 100vh; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .section { width: 100vw; height: 100vh; position: relative; }
+
+        /* --- SCREEN 1: HOME --- */
+        #home-section { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; overflow-y: auto; }
+        .typewriter h1 { font-size: 3.5rem; font-weight: 700; min-height: 140px; }
+        .cursor { display: inline-block; width: 4px; height: 3.5rem; background-color: var(--neon-green); animation: blink 1s infinite; vertical-align: middle; }
+        .glass-card-intro { background: var(--card-glass); backdrop-filter: blur(10px); border: 1px solid var(--border-light); border-radius: 16px; padding: 25px; margin: 10px; transition: transform 0.3s; }
+        .glass-card-intro:hover { transform: translateY(-5px); border-color: var(--neon-green); }
+
+        /* --- SCREEN 2: APP --- */
+        #app-section { padding-top: 20px; }
+        .timeline-wrapper { position: relative; display: flex; justify-content: space-between; max-width: 600px; width: 90%; margin: 20px auto; }
+        .timeline-bg { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #333; z-index: -1; }
+        .timeline-progress { position: absolute; top: 50%; left: 0; height: 2px; background: var(--neon-green); width: 0%; transition: width 0.4s; z-index: -1; }
+        .step-circle { width: 30px; height: 30px; background: var(--bg-dark); border: 2px solid #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; z-index: 1; }
+        .step-item.done .step-circle { background: var(--neon-green); border-color: var(--neon-green); color: black; }
+        .step-item.active .step-circle { border-color: var(--neon-green); color: var(--neon-green); }
+
+        .question-card { background: var(--card-glass); border: 1px solid var(--border-light); backdrop-filter: blur(15px); border-radius: 20px; padding: 40px; width: 100%; max-width: 500px; text-align: center; display: none; animation: fadeIn 0.5s ease; margin: 50px auto; }
+        .question-card.active { display: block; }
+        
+        /* Chrome, Safari, Edge, Opera - Hide arrows/spinners */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .input-huge { background: transparent; border: none; border-bottom: 2px solid #333; color: var(--neon-green); font-size: 3.5rem; text-align: center; width: 100%; font-weight: 700; }
+        .input-huge:focus { outline: none; border-bottom-color: var(--neon-green); }
+        .input-dual { font-size: 2rem !important; margin-bottom: 10px; } 
+
+        /* --- DASHBOARD (NEW LAYOUT) --- */
+        #result-area { display: none; height: 100vh; width: 100%; }
+        #result-area.active { display: flex; animation: fadeIn 0.5s; }
+        .left-pane { flex: 1; padding: 40px; border-right: 1px solid var(--border-light); overflow-y: auto; display: flex; flex-direction: column; }
+        .right-pane { flex: 1; padding: 30px; display: flex; flex-direction: column; justify-content: center; background: rgba(0,0,0,0.2); }
+
+        /* THE MIRROR CARD */
+        .mirror-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-light); }
+        .mirror-stat { text-align: center; }
+        .mirror-val { font-weight: bold; font-size: 1.1rem; color: #fff; }
+        .mirror-label { font-size: 0.8rem; color: var(--text-grey); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* STRATEGY CARDS */
+        .strategy-card { 
+            background: var(--card-glass); border: 1px solid var(--border-light); 
+            border-radius: 16px; padding: 25px; margin-bottom: 20px; cursor: pointer; 
+            transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .strategy-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.05); }
+        .strategy-card.selected-aggressive { border-color: var(--neon-green); background: rgba(57, 255, 20, 0.05); box-shadow: 0 0 20px rgba(57, 255, 20, 0.1); }
+        .strategy-card.selected-balanced { border-color: var(--neon-blue); background: rgba(57, 229, 255, 0.05); box-shadow: 0 0 20px rgba(57, 229, 255, 0.1); }
+        
+        .strategy-badge { position: absolute; top: 15px; right: 15px; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; font-weight: bold; }
+        .badge-aggressive { background: rgba(57, 255, 20, 0.2); color: var(--neon-green); }
+        .badge-balanced { background: rgba(57, 229, 255, 0.2); color: var(--neon-blue); }
+
+        /* PROCEED BUTTON */
+        #proceed-btn { margin-top: auto; opacity: 0.5; pointer-events: none; transition: all 0.3s; }
+        #proceed-btn.active { opacity: 1; pointer-events: all; }
+
+        /* CHART STYLES (Keep existing) */
+        .graph-header { margin-bottom: 20px; text-align: center; }
+        .view-tabs { display: flex; justify-content: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 30px; width: fit-content; margin: 0 auto; }
+        .tab-btn { background: transparent; border: none; padding: 10px 25px; border-radius: 25px; color: #777; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.9rem; }
+        .tab-btn.active-wealth { background: rgba(57, 255, 20, 0.15); color: var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.1); }
+        .tab-btn.active-debt { background: rgba(255, 57, 57, 0.15); color: var(--neon-red); box-shadow: 0 0 15px rgba(255, 57, 57, 0.1); }
+
+        @media (max-width: 992px) {
+            #result-area.active { flex-direction: column-reverse; height: auto; }
+            .left-pane, .right-pane { height: auto; }
+            .page-container { height: auto; overflow-y: auto; }
+            body { overflow: auto; }
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="page-container" id="main-container">
+
+    <div class="section" id="home-section">
+        <div class="container" style="max-width: 900px;">
+            <div class="typewriter mb-3"><h1 id="typewriter-text"></h1><span class="cursor">&nbsp;</span></div>
+            
+            <p id="subtitle-text" class="lead text-grey mb-4" style="max-width: 700px; margin: 0 auto; opacity: 0; transition: opacity 1s;">
+                Stop wondering. Start directing. Get a personalized <span class="text-neon">debt-free & wealth roadmap</span> in 60 seconds.
+            </p>
+
+            <button id="start-btn" class="btn btn-neon btn-lg px-5 py-3 rounded-pill mt-4" style="opacity: 0; transition: opacity 1s;" onclick="goToApp()">
+                Get Started <i class="bi bi-graph-up-arrow ms-2"></i>
+            </button>            
+            <div class="row mt-5 pt-4">
+                <div class="col-md-4">
+                    <div class="glass-card-intro">
+                        <i class="bi bi-graph-down-arrow text-neon fs-1 mb-3 d-block"></i>
+                        <h5 class="fw-bold">Inflation Check</h5>
+                        <p class="small text-grey">Track purchasing power loss.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card-intro">
+                        <i class="bi bi-cpu text-neon fs-1 mb-3 d-block"></i>
+                        <h5 class="fw-bold">AI Strategy</h5>
+                        <p class="small text-grey">Personalized roadmap based on math, not sales commissions.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card-intro">
+                        <i class="bi bi-lightning-charge text-neon fs-1 mb-3 d-block"></i>
+                        <h5 class="fw-bold">Control Center</h5>
+                        <p class="small text-grey">Simulate your future wealth in real-time with our engine.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section" id="app-section">
+        <div id="input-phase">
+            <div class="timeline-wrapper">
+                <div class="timeline-bg"></div><div class="timeline-progress" id="progress-bar"></div>
+                <div class="step-item active" id="step-nav-0"><div class="step-circle">1</div></div>
+                <div class="step-item" id="step-nav-1"><div class="step-circle">2</div></div>
+                <div class="step-item" id="step-nav-2"><div class="step-circle">3</div></div>
+                <div class="step-item" id="step-nav-3"><div class="step-circle">4</div></div>
+            </div>
+
+            <div class="question-card active" id="card-0">
+                <h2 class="mb-4">Monthly Income?</h2>
+                <input type="number" id="input-0" class="input-huge mb-4" placeholder="0" min="0" onkeypress="handleEnter(event, 0)">
+                <button class="btn btn-neon w-100 rounded-pill mt-3" onclick="nextStep(0)">Next ➝</button>
+            </div>
+            <div class="question-card" id="card-1">
+                <h2 class="mb-4">Monthly Expenses?</h2>
+                <input type="number" id="input-1" class="input-huge mb-4" placeholder="0" min="0" onkeypress="handleEnter(event, 1)">
+                <button class="btn btn-neon w-100 rounded-pill mt-3" onclick="nextStep(1)">Next ➝</button>
+            </div>
+            <div class="question-card" id="card-2">
+                <h2 class="mb-3">Debt Status</h2>
+                <div class="mb-3"><label class="text-grey small d-block text-start px-5">Total Outstanding</label><input type="number" id="input-debt-total" class="input-huge input-dual" placeholder="Total" min="0" onkeypress="handleDualInput(event, 'input-debt-emi')"></div>
+                <div class="mb-4"><label class="text-grey small d-block text-start px-5">Monthly EMI</label><input type="number" id="input-debt-emi" class="input-huge input-dual" placeholder="EMI" min="0" onkeypress="handleEnter(event, 2)"></div>
+                <button class="btn btn-neon w-100 rounded-pill mt-3" onclick="nextStep(2)">Next ➝</button>
+            </div>
+            <div class="question-card" id="card-3">
+                <h2 class="mb-4">Current Savings?</h2>
+                <input type="number" id="input-3" class="input-huge mb-4" placeholder="0" min="0" onkeypress="handleEnter(event, 3)">
+                <button class="btn btn-neon w-100 rounded-pill mt-3" onclick="submitForm()">ENTER COCKPIT 🚀</button>
+            </div>
+            <div id="loader" class="text-center mt-5" style="display: none;"><div class="spinner-border text-neon" style="width: 3rem; height: 3rem;"></div><h4 class="mt-4 text-white">Consulting AI Strategist...</h4></div>
+        </div>
+
+        <div id="result-area">
+            <div class="left-pane">
+                <div class="mb-4"><h2 class="fw-bold">Strategy <span class="text-neon">Selection</span></h2><p class="text-grey">Choose your path.</p></div>
+                
+                <div class="mirror-card" id="mirror-stats">
+                    </div>
+
+                <div id="strategy-container">
+                    </div>
+
+                <button id="proceed-btn" class="btn btn-neon w-100 py-3 rounded-pill mt-3" onclick="goToReport()">
+                    Proceed to Blueprint →
+                </button>
+            </div>
+
+            <div class="right-pane">
+                <div class="graph-header">
+                    <div class="view-tabs">
+                        <button class="tab-btn active-wealth" id="tab-wealth" onclick="switchView('wealth')">📈 Wealth Growth</button>
+                        <button class="tab-btn" id="tab-debt" onclick="switchView('debt')">📉 Debt Freedom</button>
+                    </div>
+                </div>
+                
+                <div style="height: 320px; width: 100%; position: relative;">
+                    <canvas id="wealthChart"></canvas>
+                </div>
+                <div class="slider-box mt-4">
+                    <label class="fw-bold text-white mb-1 d-block">⚡ Interactive Simulation</label>
+                    <p class="text-grey small fst-italic">Select a strategy on the left to see the future change.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- UI HELPERS ---
+    const text = "Where does your salary disappear by the 15th?";
+    let i = 0;
+    
+    function typeWriter() { 
+        if (i < text.length) { 
+            document.getElementById("typewriter-text").innerHTML += text.charAt(i); 
+            i++; 
+            setTimeout(typeWriter, 50); 
+        } else { 
+            document.getElementById("start-btn").style.opacity = "1";
+            document.getElementById("subtitle-text").style.opacity = "1"; 
+        } 
+    }
+    window.onload = typeWriter;
+
+    function goToApp() { document.getElementById("main-container").style.transform = "translateX(-100vw)"; }
+    function handleDualInput(e, nextId) { if (e.key === 'Enter') { document.getElementById(nextId).focus(); } }
+    function handleEnter(e, idx) { if (e.key === 'Enter') { if(idx < 3) nextStep(idx); else submitForm(); } }
+    
+    function formatCurrencyIN(value) {
+        if (value >= 10000000) return '₹' + (value / 10000000).toFixed(2) + 'Cr';
+        if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + 'L';
+        if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'k';
+        return '₹' + value;
+    }
+
+    // --- REVISED VALIDATION LOGIC ---
+    function nextStep(idx) {
+        let isValid = true;
+        let val;
+
+        if (idx === 2) {
+            // Debt Section Validation
+            const total = document.getElementById('input-debt-total').value;
+            const emi = document.getElementById('input-debt-emi').value;
+            
+            if (total === "" || emi === "") {
+                alert("Please fill both Debt fields (enter 0 if none).");
+                isValid = false;
+            } else if (parseFloat(total) < 0 || parseFloat(emi) < 0) {
+                alert("Debt values cannot be negative.");
+                isValid = false;
+            }
+        } else {
+            // Income, Expenses, Savings Validation
+            val = document.getElementById(`input-${idx}`).value;
+            if (!val) {
+                alert("Please enter a number."); 
+                isValid = false; 
+            } else if (parseFloat(val) < 0) {
+                alert("Values cannot be negative. Positive vibes only! 🚀");
+                isValid = false;
+            }
+        }
+
+        if (!isValid) return;
+
+        // Proceed to next step
+        document.getElementById(`step-nav-${idx}`).classList.remove('active'); 
+        document.getElementById(`step-nav-${idx}`).classList.add('done');
+        document.querySelector(`#step-nav-${idx} .step-circle`).innerHTML = "✓"; 
+        document.getElementById('progress-bar').style.width = `${(idx + 1) * 33}%`;
+        document.getElementById(`card-${idx}`).classList.remove('active'); 
+        document.getElementById(`card-${idx+1}`).classList.add('active');
+        document.getElementById(`step-nav-${idx+1}`).classList.add('active');
+        
+        if (idx === 1) setTimeout(() => document.getElementById(`input-debt-total`).focus(), 100); 
+        else setTimeout(() => document.getElementById(`input-${idx+1}`).focus(), 100);
+    }
+
+    // --- MAIN LOGIC (DUAL BRAIN) ---
+    let userData = {};
+    let aiPlans = {};
+    let selectedPlanKey = null; 
+    let myChart = null;
+    let currentView = 'wealth';
+
+    async function submitForm() {
+        // Validation for the last field (Savings) before submitting
+        const savingsVal = document.getElementById('input-3').value;
+        if (!savingsVal || parseFloat(savingsVal) < 0) {
+            alert("Please enter a valid (non-negative) Savings amount.");
+            return;
+        }
+
+        document.getElementById('input-phase').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        
+        userData = {
+            income: parseInt(document.getElementById('input-0').value) || 0,
+            expenses: parseInt(document.getElementById('input-1').value) || 0,
+            total_debt: parseInt(document.getElementById('input-debt-total').value) || 0,
+            monthly_emi: parseInt(document.getElementById('input-debt-emi').value) || 0,
+            savings: parseInt(document.getElementById('input-3').value) || 0
+        };
+
+        // Populate Mirror
+        document.getElementById('mirror-stats').innerHTML = `
+            <div class="mirror-stat"><div class="mirror-val">${formatCurrencyIN(userData.income)}</div><div class="mirror-label">Income</div></div>
+            <div class="mirror-stat"><div class="mirror-val text-danger-glow">${formatCurrencyIN(userData.total_debt)}</div><div class="mirror-label">Debt</div></div>
+            <div class="mirror-stat"><div class="mirror-val">${formatCurrencyIN(userData.income - userData.expenses - userData.monthly_emi)}</div><div class="mirror-label">Surplus</div></div>
+        `;
+
+        try {
+            const response = await fetch('/api/get-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(userData) });
+            aiPlans = await response.json(); 
+            
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('result-area').classList.add('active');
+            
+            // Render Strategy Cards
+            const container = document.getElementById('strategy-container');
+            container.innerHTML = `
+                <div class="strategy-card" id="card-aggressive" onclick="selectStrategy('aggressive')">
+                    <span class="strategy-badge badge-aggressive">Fastest Freedom</span>
+                    <h4 class="fw-bold text-white mb-2">${aiPlans.aggressive.title}</h4>
+                    <p class="text-grey small mb-0">${aiPlans.aggressive.desc}</p>
+                </div>
+                <div class="strategy-card" id="card-balanced" onclick="selectStrategy('balanced')">
+                    <span class="strategy-badge badge-balanced">Sustainable Growth</span>
+                    <h4 class="fw-bold text-white mb-2">${aiPlans.balanced.title}</h4>
+                    <p class="text-grey small mb-0">${aiPlans.balanced.desc}</p>
+                </div>
+            `;
+            
+            generateWealthChart('aggressive');
+
+        } catch (e) { console.error(e); alert("AI Error. Check Console."); }
+    }
+
+    function selectStrategy(key) {
+        selectedPlanKey = key;
+        document.getElementById('card-aggressive').className = 'strategy-card';
+        document.getElementById('card-balanced').className = 'strategy-card';
+        
+        if (key === 'aggressive') document.getElementById('card-aggressive').classList.add('selected-aggressive');
+        else document.getElementById('card-balanced').classList.add('selected-balanced');
+        
+        generateWealthChart(key);
+        document.getElementById('proceed-btn').classList.add('active');
+    }
+
+    function goToReport() {
+        if(!selectedPlanKey) return;
+        const finalPayload = { user: userData, chosenPlan: aiPlans[selectedPlanKey], type: selectedPlanKey };
+        localStorage.setItem('dost_report_data', JSON.stringify(finalPayload));
+        window.location.href = 'report.html';
+    }
+
+    function switchView(view) {
+        currentView = view;
+        const wealthBtn = document.getElementById('tab-wealth');
+        const debtBtn = document.getElementById('tab-debt');
+        
+        if (view === 'wealth') {
+            wealthBtn.className = 'tab-btn active-wealth';
+            debtBtn.className = 'tab-btn';
+        } else {
+            wealthBtn.className = 'tab-btn';
+            debtBtn.className = 'tab-btn active-debt';
+        }
+        if(selectedPlanKey) generateWealthChart(selectedPlanKey);
+    }
+
+    function generateWealthChart(strategyKey) {
+        if (!aiPlans[strategyKey]) return; 
+        
+        const planAlloc = aiPlans[strategyKey].allocation; 
+        
+        let bankData = [], investData = [], debtData = [], labels = [];
+        let debtRate = 0.10; 
+
+        for(let year=0; year<=10; year++) {
+            labels.push(`Year ${year}`);
+            let months = year * 12;
+
+            let monthlyInvest = planAlloc.invest;
+            let bankTotal = userData.savings + (monthlyInvest * months) + (userData.savings * 0.03 * year);
+            let r = 0.12 / 12;
+            let sipValue = monthlyInvest > 0 ? monthlyInvest * ((Math.pow(1+r, months) - 1)/r) * (1+r) : 0;
+            let investTotal = sipValue + (userData.savings * Math.pow(1.12, year));
+            
+            if (year === 0) debtData.push(userData.total_debt);
+            else {
+                let balance = userData.total_debt;
+                for(let m=0; m<months; m++) {
+                    if(balance <= 0) { balance = 0; break; }
+                    let interest = balance * (debtRate/12);
+                    let principal = (userData.monthly_emi + planAlloc.extra_debt) - interest;
+                    if (principal > 0) balance -= principal;
+                }
+                debtData.push(Math.round(balance));
+            }
+            bankData.push(Math.round(bankTotal));
+            investData.push(Math.round(investTotal));
+        }
+
+        const ctx = document.getElementById('wealthChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        Chart.defaults.color = '#666'; Chart.defaults.borderColor = '#333';
+
+        let datasets = [];
+        if (currentView === 'wealth') {
+            datasets = [
+                { label: 'Asset Growth', data: investData, borderColor: '#39FF14', backgroundColor: 'rgba(57, 255, 20, 0.1)', borderWidth: 3, fill: true, tension: 0.4 },
+                { label: 'Savings', data: bankData, borderColor: '#666', borderDash: [5, 5], borderWidth: 2, tension: 0.4, pointRadius: 0 }
+            ];
+        } else {
+            datasets = [
+                { label: 'Debt Balance', data: debtData, borderColor: '#ff3939', backgroundColor: 'rgba(255, 57, 57, 0.1)', borderWidth: 3, fill: true, tension: 0.2, pointRadius: 3 }
+            ];
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                scales: { 
+                    x: { grid: { display: false } }, 
+                    y: { ticks: { callback: v => formatCurrencyIN(v) } }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
