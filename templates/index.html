@@ -48,6 +48,45 @@
         #start-btn {
             animation: pulse-neon 2s infinite;
         }
+        .brand-logo {
+            position: fixed;
+            top: 25px;
+            left: 30px;
+            z-index: 1000; /* Ensures it sits above sliding sections */
+            display: flex;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+            text-decoration: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .brand-logo:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        .brand-icon {
+            font-size: 1.8rem;
+            margin-right: 10px;
+            color: var(--neon-blue);
+            filter: drop-shadow(0 0 8px rgba(57, 229, 255, 0.6));
+        }
+        .brand-text-main {
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--neon-green);
+            text-shadow: var(--neon-glow);
+            letter-spacing: 1px;
+        }
+        .brand-text-sub {
+            font-weight: 400;
+            font-size: 1.4rem;
+            color: var(--text-white);
+            margin-left: 5px;
+        }
+        @media (max-width: 768px) {
+            .brand-logo { top: 15px; left: 15px; }
+            .brand-icon { font-size: 1.4rem; }
+            .brand-text-main, .brand-text-sub { font-size: 1.1rem; }
+        }
 
         /* --- PAGE TRANSITION --- */
         .page-container { display: flex; width: 200vw; height: 100vh; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
@@ -128,7 +167,12 @@
     </style>
 </head>
 <body>
-
+<a href="/" class="brand-logo">
+    <i class="bi bi-shield-plus brand-icon"></i>
+    <div>
+        <span class="brand-text-main">Dost</span><span class="brand-text-sub">Financial</span>
+    </div>
+</a>
 <div class="page-container" id="main-container">
 
     <div class="section" id="home-section">
