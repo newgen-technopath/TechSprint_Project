@@ -40,7 +40,7 @@ A Google Cloud API Key (for Gemini)
 1. Clone the Repository
 Bash
 
-git clone https://github.com/Utkarsh-Kadu
+git clone https://github.com/newgen-technopath
 /dost-financial.git
 cd dost-financial
 2. Set Up Environment
